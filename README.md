@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aspire AI
+
+An interactive AI-powered learning platform built with Next.js 16, featuring Python and AI courses with hands-on exercises.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router) + React 19
+- **Auth**: NextAuth v5 (Google OAuth + Credentials)
+- **Database**: PostgreSQL on Neon via Prisma 6
+- **AI**: Google Gemini API
+- **Styling**: Tailwind CSS v4 + shadcn/ui (Radix Nova)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20+
+- npm
+
+### Environment Variables
+
+Copy the `.env` file and fill in the values:
+
+```env
+# Database (Neon PostgreSQL)
+DATABASE_URL="postgresql://..."
+
+# NextAuth
+AUTH_SECRET="your-secret"
+AUTH_URL="http://localhost:3000"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-client-id"
+GOOGLE_CLIENT_SECRET="your-client-secret"
+
+# Gemini AI
+GEMINI_API_KEY="your-api-key"
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install & Run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+### Database
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Push schema to database
+npx prisma db push
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Seed with sample courses & lessons
+npm run seed
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Open Prisma Studio
+npx prisma studio
+```
 
-## Deploy on Vercel
+### Auth Endpoints
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `GET /api/auth/session` — Get current session
+- `POST /api/auth/signin` — Sign in (Google or credentials)
+- `POST /api/auth/signout` — Sign out
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Protected routes: `/learn/*`, `/practice/*`, `/profile/*` (redirect to `/login` if unauthenticated).
+
+## Project Structure
+
+```
+app/               # Next.js App Router pages & API routes
+  api/auth/        # NextAuth route handler
+  page.tsx         # Landing page
+  globals.css      # Tailwind v4 + shadcn theme
+components/ui/     # shadcn UI components
+lib/
+  auth.ts          # NextAuth configuration
+  db.ts            # Prisma client singleton
+  prisma.ts        # Re-exports from db.ts
+  utils.ts         # cn() helper
+prisma/
+  schema.prisma    # Database schema
+  seed.ts          # Seed script
+proxy.ts           # Route protection (Next.js 16 proxy)
+types/             # TypeScript declarations
+```
+
+## Database Schema
+
+- **User** — Accounts with coding level and progress tracking
+- **Account / Session / VerificationToken** — NextAuth models
+- **Course** — Language courses (Python, AI Basics, JavaScript)
+- **Lesson** — Course lessons with video and exercises
+- **Exercise** — Coding challenges with starter code, solutions, hints
+- **UserProgress** — Lesson completion tracking
+- **ChatMessage** — AI chat history per user
+
+## Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run seed` | Seed the database |
+| `npx prisma studio` | Open DB browser |
