@@ -3,10 +3,7 @@
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Play, Send, ChevronDown, Lightbulb, RotateCcw, CheckCircle2, XCircle, Sparkles, Terminal, BookOpen, ChevronLeft, AlertCircle } from "lucide-react";
+import { Play, Send, RotateCcw, CheckCircle2, XCircle, Lightbulb, Terminal, FileText, Sparkles, Maximize2, Minimize2, Code2 } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -28,10 +25,12 @@ type ExistingProgress = {
   code: string | null;
 } | null;
 
-const difficultyColor: Record<string, string> = {
-  EASY: "bg-green-100 text-green-700 border-green-200",
-  MEDIUM: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  HARD: "bg-red-100 text-red-700 border-red-200",
+const TABS = ["Description", "Hints"] as const;
+
+const difficultyStyles: Record<string, { ring: string; badge: string }> = {
+  EASY: { ring: "ring-green-500/20", badge: "text-green-400 bg-green-500/10" },
+  MEDIUM: { ring: "ring-yellow-500/20", badge: "text-yellow-400 bg-yellow-500/10" },
+  HARD: { ring: "ring-red-500/20", badge: "text-red-400 bg-red-500/10" },
 };
 
 export function PracticeExerciseClient({
@@ -52,12 +51,13 @@ export function PracticeExerciseClient({
   } | null>(null);
   const [revealedHints, setRevealedHints] = useState(0);
   const [showOutput, setShowOutput] = useState(false);
-  const [showDescription, setShowDescription] = useState(true);
+  const [activeTab, setActiveTab] = useState<"Description" | "Hints">("Description");
+  const [outputExpanded, setOutputExpanded] = useState(false);
 
   const runCode = useCallback(async () => {
     setIsRunning(true);
     setShowOutput(true);
-    setOutput("> Running...\n");
+    setOutput("");
     try {
       const res = await fetch("/api/code/run", {
         method: "POST",
@@ -65,9 +65,9 @@ export function PracticeExerciseClient({
         body: JSON.stringify({ code, exerciseId: exercise.id }),
       });
       const data = await res.json();
-      setOutput(data.output || "# No output");
+      setOutput(data.output || "");
     } catch {
-      setOutput("# Failed to run code. Check your connection.");
+      setOutput("Failed to run code. Check your connection.");
     } finally {
       setIsRunning(false);
     }
@@ -75,7 +75,8 @@ export function PracticeExerciseClient({
 
   const submitCode = useCallback(async () => {
     setIsSubmitting(true);
-    setShowOutput(false);
+    setShowOutput(true);
+    setOutput("Evaluating your solution...\n");
     setSubmitResult(null);
     try {
       const res = await fetch("/api/code/submit", {
@@ -84,17 +85,14 @@ export function PracticeExerciseClient({
         body: JSON.stringify({ code, exerciseId: exercise.id }),
       });
       const data = await res.json();
-      setSubmitResult({
-        correct: data.correct,
-        feedback: data.feedback,
-        score: data.score,
-      });
+      setSubmitResult({ correct: data.correct, feedback: data.feedback, score: data.score });
+      setOutput(data.correct
+        ? `✅ All tests passed!\n\nScore: ${data.score}/100\n\n${data.feedback}`
+        : `❌ Some tests failed\n\nScore: ${data.score}/100\n\n${data.feedback}`
+      );
     } catch {
-      setSubmitResult({
-        correct: false,
-        feedback: "Failed to submit. Check your connection.",
-        score: 0,
-      });
+      setOutput("Failed to submit. Check your connection.");
+      setSubmitResult({ correct: false, feedback: "Connection error", score: 0 });
     } finally {
       setIsSubmitting(false);
     }
@@ -108,108 +106,135 @@ export function PracticeExerciseClient({
     setRevealedHints(0);
   }, [exercise.starterCode]);
 
+  const ds = difficultyStyles[exercise.difficulty] || difficultyStyles.EASY;
+
   return (
     <>
-      <div className={`flex-1 overflow-y-auto border-r border-border/50 ${showDescription ? "" : "hidden lg:flex"}`}>
-        <div className="p-4 sm:p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">
-                {exercise.courseTitle} &middot; {exercise.lessonTitle}
-              </p>
-            </div>
+      <div className="w-1/2 min-w-0 flex flex-col bg-white border-r border-white/10">
+        <div className="shrink-0 flex border-b border-gray-200">
+          {TABS.map((tab) => (
             <button
-              onClick={() => setShowDescription(false)}
-              className="lg:hidden text-xs text-muted-foreground hover:text-foreground transition-colors"
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2.5 text-xs font-medium transition-colors relative ${
+                activeTab === tab
+                  ? "text-[#4F3D8A]"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
             >
-              <ChevronLeft className="h-4 w-4" />
+              {tab === "Description" && <FileText className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />}
+              {tab === "Hints" && <Lightbulb className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />}
+              {tab}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4F3D8A]" />
+              )}
             </button>
-          </div>
+          ))}
+        </div>
 
-          <div className="prose prose-sm prose-headings:font-heading prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-code:text-brand-primary prose-code:bg-brand-light prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: exercise.description.replace(/\n/g, "<br/>") }} />
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === "Description" && (
+            <div className="p-5 space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 font-heading">
+                  {exercise.title}
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  {exercise.courseTitle} &middot; {exercise.lessonTitle}
+                </p>
+              </div>
 
-          {exercise.hints.length > 0 && (
-            <Collapsible className="w-full">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full py-2">
-                <Lightbulb className="h-4 w-4 text-yellow-500" />
-                Hints ({revealedHints}/{exercise.hints.length})
-                <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 pt-2">
-                {exercise.hints.slice(0, revealedHints).map((hint, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800"
+              <div className="prose prose-sm prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-strong:text-gray-900 prose-code:text-[#4F3D8A] prose-code:bg-[#EEEAFF] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs max-w-none">
+                <div style={{ whiteSpace: "pre-wrap" }}>{exercise.description}</div>
+              </div>
+
+              {exercise.hints.length > 0 && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => setActiveTab("Hints")}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-yellow-600 hover:text-yellow-700 transition-colors"
                   >
-                    <strong className="text-xs">Hint {i + 1}:</strong> {hint}
-                  </div>
-                ))}
-                {revealedHints < exercise.hints.length && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setRevealedHints((r) => Math.min(r + 1, exercise.hints.length))}
-                    className="text-xs"
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Reveal Hint {revealedHints + 1}
-                  </Button>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-
-          {submitResult && (
-            <Card className={`border-2 ${submitResult.correct ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"}`}>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  {submitResult.correct ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-500" />
-                  )}
-                  <span className={`font-semibold text-sm ${submitResult.correct ? "text-green-800" : "text-red-800"}`}>
-                    {submitResult.correct ? "Correct!" : "Needs improvement"}
-                  </span>
-                  <span className="ml-auto text-xs font-mono tabular-nums text-muted-foreground">
-                    Score: {submitResult.score}/100
-                  </span>
+                    <Lightbulb className="h-3.5 w-3.5" />
+                    Need a hint? ({revealedHints}/{exercise.hints.length} revealed)
+                  </button>
                 </div>
-                <p className="text-sm text-muted-foreground">{submitResult.feedback}</p>
-              </CardContent>
-            </Card>
+              )}
+
+              {existingProgress?.completed && (
+                <div className="rounded-lg bg-green-50 border border-green-200 p-3 flex items-center gap-2 text-sm text-green-800">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Previously completed &middot; Score: {existingProgress.score}/100
+                </div>
+              )}
+            </div>
           )}
 
-          {existingProgress?.completed && !submitResult && (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-3 flex items-center gap-2 text-sm text-green-800">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              You previously completed this exercise (score: {existingProgress.score}/100)
+          {activeTab === "Hints" && (
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                <Lightbulb className="h-4 w-4 text-yellow-500" />
+                Hints
+                <span className="text-xs text-gray-400 font-normal ml-1">
+                  ({revealedHints}/{exercise.hints.length} revealed)
+                </span>
+              </div>
+
+              {exercise.hints.length === 0 ? (
+                <p className="text-sm text-gray-400">No hints available for this exercise.</p>
+              ) : (
+                <div className="space-y-3">
+                  {exercise.hints.slice(0, revealedHints).map((hint, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg bg-yellow-50 border border-yellow-200 p-4"
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-yellow-200 text-yellow-800 text-[10px] font-bold">
+                          {i + 1}
+                        </span>
+                        <span className="text-xs font-semibold text-yellow-800">
+                          Hint {i + 1}
+                        </span>
+                      </div>
+                      <p className="text-sm text-yellow-800 leading-relaxed">{hint}</p>
+                    </div>
+                  ))}
+                  {revealedHints < exercise.hints.length && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRevealedHints((r) => Math.min(r + 1, exercise.hints.length))}
+                      className="text-xs w-full border-dashed border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400"
+                    >
+                      <Sparkles className="h-3 w-3 mr-1.5" />
+                      Reveal Hint {revealedHints + 1}
+                    </Button>
+                  )}
+                  {revealedHints === exercise.hints.length && exercise.hints.length > 0 && (
+                    <p className="text-xs text-gray-400 text-center pt-1">
+                      All hints revealed. Good luck!
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-muted/30 shrink-0">
+      <div className="w-1/2 min-w-0 flex flex-col bg-[#1E1E2E]">
+        <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252536] border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Code Editor</span>
+            <Code2 className="h-4 w-4 text-white/30" />
+            <span className="text-xs font-medium text-white/50">code.py</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               onClick={resetCode}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted"
+              className="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-white/5"
             >
               <RotateCcw className="h-3 w-3" />
               Reset
-            </button>
-            <button
-              onClick={() => setShowDescription(true)}
-              className="lg:hidden text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted"
-            >
-              Problem
             </button>
           </div>
         </div>
@@ -226,72 +251,115 @@ export function PracticeExerciseClient({
               lineNumbers: "on",
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
-              padding: { top: 12 },
+              padding: { top: 16 },
               tabSize: 4,
               automaticLayout: true,
+              fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace",
+              renderWhitespace: "selection",
+              smoothScrolling: true,
+              cursorBlinking: "smooth",
+              cursorStyle: "line",
             }}
           />
         </div>
 
-        <div className="border-t border-border/50 bg-muted/30 px-4 py-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={runCode}
-              disabled={isRunning}
-              className="text-xs"
-            >
-              {isRunning ? (
-                <span className="flex items-center gap-1">
-                  <span className="animate-pulse">Running...</span>
-                </span>
-              ) : (
-                <>
-                  <Play className="h-3.5 w-3.5" />
-                  Run Code
-                </>
-              )}
-            </Button>
-            <Button
-              size="sm"
-              onClick={submitCode}
-              disabled={isSubmitting}
-              className="text-xs bg-gradient-to-r from-brand-primary to-brand-accent text-white hover:opacity-90"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center gap-1">
-                  <span className="animate-pulse">Checking...</span>
-                </span>
-              ) : (
-                <>
-                  <Send className="h-3.5 w-3.5" />
-                  Submit
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {showOutput && (
-          <div className="border-t border-border/50 shrink-0">
-            <div className="flex items-center justify-between px-4 py-1.5 bg-black/90">
-              <div className="flex items-center gap-1.5">
-                <Terminal className="h-3.5 w-3.5 text-green-400" />
-                <span className="text-[11px] font-mono text-green-400">Output</span>
-              </div>
-              <button
-                onClick={() => setShowOutput(false)}
-                className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#252536]">
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={runCode}
+                disabled={isRunning}
+                className="h-7 text-[11px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 gap-1.5"
               >
-                <XCircle className="h-3 w-3" />
-              </button>
+                {isRunning ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Running...
+                  </span>
+                ) : (
+                  <>
+                    <Play className="h-3 w-3 fill-emerald-400" />
+                    Run
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                onClick={submitCode}
+                disabled={isSubmitting}
+                className="h-7 text-[11px] bg-[#4F3D8A] text-white hover:bg-[#5B4AA8] border border-[#4F3D8A]/50 gap-1.5"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    Checking...
+                  </span>
+                ) : (
+                  <>
+                    <Send className="h-3 w-3" />
+                    Submit
+                  </>
+                )}
+              </Button>
             </div>
-            <pre className="bg-black/95 text-green-300 p-3 text-xs font-mono leading-relaxed overflow-auto max-h-40 whitespace-pre-wrap">
-              {output || "> Waiting for output..."}
-            </pre>
+
+            {showOutput && (
+              <button
+                onClick={() => setOutputExpanded(!outputExpanded)}
+                className="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1"
+              >
+                {outputExpanded ? (
+                  <Minimize2 className="h-3 w-3" />
+                ) : (
+                  <Maximize2 className="h-3 w-3" />
+                )}
+              </button>
+            )}
           </div>
-        )}
+
+          {showOutput && (
+            <div
+              className={`border-t border-white/[0.06] transition-all duration-200 ${
+                outputExpanded ? "h-64" : "h-36"
+              }`}
+            >
+              <div className="flex items-center justify-between px-4 py-1.5 bg-black/30">
+                <div className="flex items-center gap-1.5">
+                  <Terminal className="h-3.5 w-3.5 text-white/40" />
+                  <span className="text-[11px] font-mono text-white/40">console</span>
+                </div>
+                {output && (
+                  <span className="text-[10px] text-white/20">
+                    {output.length} chars
+                  </span>
+                )}
+              </div>
+              <pre className="h-[calc(100%-28px)] bg-black/20 p-4 text-[13px] font-mono leading-relaxed overflow-auto whitespace-pre-wrap text-white/80">
+                {output ? (
+                  output.startsWith("✅") || output.startsWith("All tests passed") ? (
+                    <span className="text-emerald-400">{output}</span>
+                  ) : output.startsWith("❌") || output.startsWith("Some tests failed") ? (
+                    <span className="text-red-400">{output}</span>
+                  ) : (
+                    <span>{output}</span>
+                  )
+                ) : (
+                  <span className="text-white/20 italic">Run your code to see output here</span>
+                )}
+              </pre>
+            </div>
+          )}
+
+          {!showOutput && (
+            <div className="border-t border-white/[0.06] bg-black/20 px-4 py-2.5">
+              <p className="text-[11px] text-white/20 italic flex items-center gap-2">
+                <Play className="h-3 w-3" />
+                Press Run to execute your code
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
