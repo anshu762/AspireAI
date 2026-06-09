@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/lib/providers";
+import FloatingChatbot from "@/components/chatbot/FloatingChatbot";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -32,7 +33,10 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${inter.variable}`}
     >
       <body className="min-h-screen flex flex-col antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <FloatingChatbot />
+        </Providers>
       </body>
     </html>
   );
