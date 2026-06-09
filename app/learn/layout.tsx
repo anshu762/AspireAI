@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import CourseSidebar from "@/components/learn/CourseSidebar";
+import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 
 export default async function LearnLayout({
   children,
@@ -10,6 +11,11 @@ export default async function LearnLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { onboardingCompleted: true, name: true },
+  });
 
   const courses = await prisma.course.findMany({
     where: { isPublished: true },
@@ -39,6 +45,10 @@ export default async function LearnLayout({
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      <OnboardingWrapper
+        onboardingCompleted={user?.onboardingCompleted ?? true}
+        userName={user?.name ?? null}
+      />
       <CourseSidebar
         courses={courses}
         progress={progress}

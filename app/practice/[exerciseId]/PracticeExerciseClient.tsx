@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Play, Send, RotateCcw, CheckCircle2, XCircle, Lightbulb, Terminal, FileText, Sparkles, Maximize2, Minimize2, Code2, Trophy } from "lucide-react";
+import { toast } from "sonner";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -91,13 +92,23 @@ export function PracticeExerciseClient({
         ? `✅ All tests passed!\n\nScore: ${data.score}/100\n\n${data.feedback}`
         : `❌ Some tests failed\n\nScore: ${data.score}/100\n\n${data.feedback}`
       );
+      if (data.correct) {
+        toast.success(`Exercise solved! Great job! (${data.score}/100)`, {
+          icon: <Trophy className="h-4 w-4" />,
+        });
+      } else {
+        toast.error(`Score: ${data.score}/100 — keep trying!`);
+      }
       if (data.leveledUp) {
         setLevelUp(data.newLevel);
+        const label = data.newLevel === "MODERATE" ? "Moderate" : "Advanced";
+        toast.success(`🔥 You leveled up to ${label}!`, { duration: 5000 });
         setTimeout(() => setLevelUp(null), 4000);
       }
     } catch {
       setOutput("Failed to submit. Check your connection.");
       setSubmitResult({ correct: false, feedback: "Connection error", score: 0 });
+      toast.error("Failed to submit exercise");
     } finally {
       setIsSubmitting(false);
     }
@@ -126,8 +137,8 @@ export function PracticeExerciseClient({
           </div>
         </div>
       )}
-      <div className="w-1/2 min-w-0 flex flex-col bg-white border-r border-white/10">
-        <div className="shrink-0 flex border-b border-gray-200">
+      <div className="w-full lg:w-1/2 min-w-0 flex flex-col bg-white border-r border-white/10">
+        <div className="shrink-0 flex border-b border-gray-200 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab}
@@ -238,7 +249,7 @@ export function PracticeExerciseClient({
         </div>
       </div>
 
-      <div className="w-1/2 min-w-0 flex flex-col bg-[#1E1E2E]">
+      <div className="w-full lg:w-1/2 min-w-0 flex flex-col bg-[#1E1E2E]">
         <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#252536] border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-white/30" />

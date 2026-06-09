@@ -318,7 +318,7 @@ export default function FloatingChatbot() {
         className={cn(
           "fixed z-50 transition-all duration-300 ease-in-out",
           isOpen
-            ? "bottom-0 right-0 lg:bottom-24 lg:right-6 lg:w-100 lg:h-145 lg:rounded-2xl lg:shadow-2xl"
+            ? "inset-0 lg:inset-auto lg:bottom-24 lg:right-6 lg:w-100 lg:h-145 lg:rounded-2xl lg:shadow-2xl"
             : "bottom-6 right-6",
         )}
       >

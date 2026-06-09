@@ -38,9 +38,11 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  codingLevel   CodingLevel  @default(BEGINNER)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  codingLevel           CodingLevel  @default(BEGINNER)
+  onboardingCompleted   Boolean      @default(false)
+  onboardingGoal        String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   accounts    Account[]
   sessions    Session[]

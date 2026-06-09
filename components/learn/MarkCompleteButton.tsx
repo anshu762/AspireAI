@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Sparkles, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function MarkCompleteButton({
   lessonId,
@@ -30,14 +31,22 @@ export default function MarkCompleteButton({
       const data = await res.json();
       if (res.ok) {
         setCompleted(true);
+        toast.success("Lesson marked as complete!", {
+          icon: <Check className="h-4 w-4" />,
+        });
         if (data.leveledUp) {
           setLevelUp(data.newLevel);
+          const label = data.newLevel === "MODERATE" ? "Moderate" : data.newLevel === "ADVANCED" ? "Advanced" : "Beginner";
+          toast.success(`You leveled up to ${label}!`, {
+            icon: <Trophy className="h-4 w-4" />,
+            duration: 5000,
+          });
           setTimeout(() => setLevelUp(null), 4000);
         }
         setTimeout(() => router.refresh(), 800);
       }
     } catch {
-      console.error("Failed to mark lesson complete");
+      toast.error("Failed to mark lesson complete");
     } finally {
       setLoading(false);
     }

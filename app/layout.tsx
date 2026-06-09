@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/lib/providers";
 import FloatingChatbot from "@/components/chatbot/FloatingChatbot";
+import { Toaster } from "sonner";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -17,9 +18,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AspireAI — Learn Coding & AI",
-  description:
-    "Step-by-step tutorials, hands-on practice, and an AI tutor available 24/7. Perfect for beginners.",
+  title: { default: "AspireAI — Learn Coding & AI", template: "%s — AspireAI" },
+  description: "Step-by-step tutorials, hands-on practice, and an AI tutor available 24/7. Perfect for beginners.",
+  openGraph: {
+    title: "AspireAI — Learn Coding & AI",
+    description: "Step-by-step tutorials, hands-on practice, and an AI tutor available 24/7.",
+    type: "website",
+    siteName: "AspireAI",
+  },
 };
 
 export default function RootLayout({
@@ -36,6 +42,14 @@ export default function RootLayout({
         <Providers>
           {children}
           <FloatingChatbot />
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              duration: 4000,
+            }}
+          />
         </Providers>
       </body>
     </html>

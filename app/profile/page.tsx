@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { calculateLevel, getLevelLabel } from "@/lib/levelCalculator";
 import { GoogleGenAI } from "@google/genai";
+
+export const metadata: Metadata = {
+  title: "Profile",
+  description: "Your AspireAI learning dashboard — track progress, streaks, and activity.",
+};
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
@@ -161,7 +167,7 @@ Based on this learning data, suggest in 1 short sentence what this student shoul
           <EditProfileDialog currentName={user.name} />
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { icon: <BookOpen className="h-4 w-4" />, label: "Lessons", value: completedLessonCount, color: "from-violet-500 to-indigo-500" },
             { icon: <Code2 className="h-4 w-4" />, label: "Solved", value: solvedExerciseCount, color: "from-pink-500 to-rose-500" },
