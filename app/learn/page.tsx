@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Courses",
+  description: "Browse all coding and AI courses on AspireAI.",
+};
 import {
   BookOpen,
   ArrowRight,
