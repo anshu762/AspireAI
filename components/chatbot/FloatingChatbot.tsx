@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -454,9 +455,9 @@ export default function FloatingChatbot() {
                   </button>
                 </div>
               ) : (
-                <p className="text-center text-xs text-muted-foreground py-2">
+                <Link href="/login" className="block text-center text-xs text-muted-foreground hover:text-brand-primary py-2 transition-colors">
                   Sign in to chat with Astra
-                </p>
+                </Link>
               )}
             </div>
           </div>
@@ -464,7 +465,11 @@ export default function FloatingChatbot() {
           <button
             onClick={() => {
               setIsOpen(true);
-              if (session?.user) fetchMessages();
+              if (session?.user) {
+                fetchMessages();
+              } else {
+                setInitialLoading(false);
+              }
             }}
             className="group flex items-center gap-2 rounded-2xl bg-linear-to-br from-brand-accent to-pink-500 text-white px-4 py-3 shadow-xl shadow-brand-accent/30 hover:shadow-2xl hover:shadow-brand-accent/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
           >
