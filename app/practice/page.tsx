@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Practice",
+  description: "Practice coding exercises and sharpen your programming skills.",
+};
 import { ArrowRight, CheckCircle2, Code2 } from "lucide-react";
 import { PracticeFilters } from "./PracticeFilters";
 
